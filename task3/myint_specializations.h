@@ -5,17 +5,17 @@
 
 // Type traits translating bit-size to built in types.
 template<unsigned int BIT_SIZE> struct myuint_traits {};
-template<> struct myuint_traits<8>  {using int_type = unsigned char;};
-template<> struct myuint_traits<16> {using int_type = unsigned short;};
-template<> struct myuint_traits<32> {using int_type = unsigned int;};
-template<> struct myuint_traits<64> {using int_type = unsigned long long;};
+template<> struct myuint_traits<8>  {typedef unsigned char      int_type;};
+template<> struct myuint_traits<16> {typedef unsigned short     int_type;};
+template<> struct myuint_traits<32> {typedef unsigned int       int_type;};
+template<> struct myuint_traits<64> {typedef unsigned long long int_type;};
 
 // Base class for all specializations.
 template<unsigned int BIT_SIZE>
 class BuiltInIntBase
 {
 protected:
-    using IntType = myuint_traits<64>::int_type;
+    typedef typename myuint_traits<BIT_SIZE>::int_type IntType;
 
 public:
     BuiltInIntBase() : m_value(0u) {}
@@ -46,7 +46,8 @@ public:
    IntType operator/(const myuint& rhs)   {return m_value / rhs.m_value;}
    IntType operator%(const myuint& rhs)   {return m_value % rhs.m_value;}
    
-   friend std::ostream &operator<<(std::ostream &s, const myuint &instance) {s << instance.m_value; return s;}
+   // Cast to 'unsigned short' for output, as 'unsigned char' is printed out as ASCII
+   friend std::ostream &operator<<(std::ostream &s, const myuint &instance) {s << static_cast<unsigned short>(instance.m_value); return s;}
 };
 
 template<>

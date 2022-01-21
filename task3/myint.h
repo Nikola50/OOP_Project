@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <vector>
 #include <string>
+#include <algorithm>
 #include <iostream>
 #include <iomanip>
 #include <stdexcept>
@@ -16,7 +17,7 @@ private:
 
 
 public:
-    // Default constructor. Note smaller built in types are handled by constructors inside the specializations
+    // Default constructor. Note: smaller built in types are handled by constructors inside the specializations
     myuint()                            {initialize(0u);}
     myuint(unsigned long long value)    {initialize(value);}
 
@@ -29,9 +30,18 @@ public:
     myuint operator+(const myuint& rhs)
     {
         myuint<BIT_SIZE> result(0u);
-        for (size_t i = 0; i < m_value.size(); ++i)
+        unsigned int maxSize = std::max(m_value.size(), rhs.m_value.size());
+        result.m_value.resize(maxSize);
+        for (size_t i = 0; i < maxSize; ++i)
         {
-            result.m_value[i] = m_value[i] + rhs.m_value[i];
+            if (i < m_value.size())
+            {
+                result.m_value[i] += m_value[i];
+            }
+            if (i < rhs.m_value.size())
+            {
+                result.m_value[i] += rhs.m_value[i];
+            }
         }
         
         result.normalize();
@@ -41,28 +51,25 @@ public:
 
     myuint operator-(const myuint& rhs)
     {
-        // "A computation involving unsigned operands can never overflow, because a result that cannot be
-        // represented by the resulting unsigned integer type is reduced modulo the number that is one greater
-        // than the largest value that can be represented by the resulting type. (ISO/IEC 9899:1999 (E) §6.2.5/9)"
-        // Ref: http://ptgmedia.pearsoncmg.com/images/0321335724/samplechapter/seacord_ch05.pdf page 166
-        
-        // As you can see, (unsigned)0 - (unsigned)1 equals -1 modulo UINT_MAX+1, or in other words, UINT_MAX.
-        // -X  ->  (UINT_MAX + 1 - X)
-        
         myuint<BIT_SIZE> result(0u);
-        for (size_t i = 0; i < m_value.size(); ++i)
+        unsigned int maxSize = std::max(m_value.size(), rhs.m_value.size());
+        result.m_value.resize(maxSize);
+        for (size_t i = 0; i < maxSize; ++i)
         {
-            result.m_value[i] = m_value[i] - rhs.m_value[i];
+            if (i < m_value.size())
+            {
+                result.m_value[i] += m_value[i];
+            }
+            if (i < rhs.m_value.size())
+            {
+                result.m_value[i] -= rhs.m_value[i];
+            }
         }
         
         result.normalize();
 
         return result;
     }
-
-    myuint operator*(const myuint& rhs) const;
-    myuint operator/(const myuint& rhs) const;
-    myuint operator%(const myuint& rhs) const;
 
     friend std::ostream &operator<<(std::ostream &s, const myuint &instance)
     {
@@ -81,6 +88,11 @@ public:
         }
         return s;
     }
+
+    // TODO:
+    myuint operator*(const myuint& rhs) const;
+    myuint operator/(const myuint& rhs) const;
+    myuint operator%(const myuint& rhs) const;
 
 private:
 
@@ -112,6 +124,7 @@ private:
             }
 
             // Remove potential negative numbers by wrapping from our MAX values (s_base).
+            // -X  ->  (UINT_MAX + 1 - X)
             if (m_value[i] < 0)
             {
                 m_value[i] = s_base + m_value[i];
